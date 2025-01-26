@@ -36,9 +36,9 @@ int main() {
     instrumentsMap[0] = std::make_shared<Piano>();
     instrumentsMap[1] = std::make_shared<Harmonica>();
     instrumentsMap[2] = std::make_shared<Violin>();
-
+    
     int note = NOT_PRESSED;  // Track the current note being played
-    bool holdKey = false; // Track if a key is held
+    bool heldKey = false; // Track if a key is held
 
     // Create the keyboard listener object
     KeyboardListener listenerTask;
@@ -48,25 +48,25 @@ int main() {
                                                  std::ref(octaveShift), std::ref(currentInstrument));
 
     // Main loop: Play notes based on the currentPress value
-    while (currentPress != VC_ESC) {
+    while (currentPress != ESCAPE_PRESSED) {
         if (currentPress != NOT_PRESSED) 
         { // If a key is pressed
             if(noteMapping.find(currentPress) != noteMapping.end())
-            {
-                
-                if (!holdKey || note != (noteMapping[currentPress] + octaveShift)) {
+            {   
+                int newNote = noteMapping[currentPress] + octaveShift;;
+                if (!heldKey || note != newNote) {
                     // If no key was previously held or the current key is different from the previous one
-                    note = noteMapping[currentPress] + octaveShift;  // Store the pressed key
+                    note = newNote;  // Store the pressed key
                     instrumentsMap[currentInstrument]->PlayNote(note, 100);  // Play the new note
-                    holdKey = true;  // Indicate that a key is being held
+                    heldKey = true;  // Indicate that a key is being held
                     std::cout << "Playing note: " << note << std::endl;
                 }
             }
         }
-        else if (holdKey) {
+        else if (heldKey ) {
             // If no key is pressed but one was held previously
             instrumentsMap[currentInstrument]->StopAllNotes();  // Stop the note when the key is released
-            holdKey = false;  // Reset hold state
+            heldKey = false;  // Reset hold state
             std::cout << "Note stopped." << std::endl;
         }
 

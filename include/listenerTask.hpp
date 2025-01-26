@@ -2,7 +2,7 @@
 
 #include <atomic>
 #include <thread>
-#define VC_ESC 27
+#define ESCAPE_PRESSED 0x1B
 #define NOT_PRESSED -1
 #define TOTAL_INSTRUMENT 3
 

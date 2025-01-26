@@ -10,18 +10,18 @@ Instrument::~Instrument(){
 };
 
 void Instrument::PlayNote(int index,int velocity) {
-    std::cout << "Playing note..." << std::endl;
+    //std::cout << "Playing note..." << std::endl;
     fluid_synth_noteon(synth, 0, index, velocity);  // Channel 0, note 60 (C4), velocity 100
     
 }
 
-void Instrument::Stop() {
-  std::cout << "stop played." << std::endl;
-  fluid_synth_noteoff(synth, 0, 60);  // Stop the note
+void Instrument::Stop(int index) {
+  //std::cout << "stop played." << std::endl;
+  fluid_synth_noteoff(synth, 0, index);  // Stop the note
 }
 
 void Instrument::StopAllNotes() {
-  std::cout << "stop all notes." << std::endl;
+  //std::cout << "stop all notes." << std::endl;
  fluid_synth_all_notes_off(synth, 0);
 }
 
