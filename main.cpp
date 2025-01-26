@@ -53,7 +53,7 @@ int main() {
         { // If a key is pressed
             if(noteMapping.find(currentPress) != noteMapping.end())
             {   
-                int newNote = noteMapping[currentPress] + octaveShift;;
+                int newNote = noteMapping[currentPress] + octaveShift;
                 if (!heldKey || note != newNote) {
                     // If no key was previously held or the current key is different from the previous one
                     note = newNote;  // Store the pressed key
@@ -71,7 +71,7 @@ int main() {
         }
 
         // Small delay to avoid high CPU usage in the loop
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 
     // Wait for the listener thread to finish
