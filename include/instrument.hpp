@@ -14,8 +14,8 @@ public:
     Instrument();
     ~Instrument();
 
-    virtual void PlayNote(int index, int velocity);
-    virtual void Stop(int index);
+    virtual void PlayNote(int index,int chanelIndex, int velocity);
+    virtual void Stop(int index,int chanelIndex);
     virtual void StopAllNotes();
     virtual int  LoadSoundFont(const char *pathToSF);  // Load the SF2 soundfont
 

@@ -29,3 +29,6 @@ output.txt
 *.tmp
 *~
 .DS_Store
+bin/
+/include/fluidsynth
+lib/

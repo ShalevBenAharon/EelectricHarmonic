@@ -1,82 +1,116 @@
 #include "instrument.hpp"
-#include "listenerTask.hpp"
+#include "reciverTask.hpp"
+#include "Loger.hpp"
 #include <fluidsynth.h>
-#include <thread>
-#include <iostream>
 #include <chrono>
 #include <memory>
 #include <map>
+#include <thread>
+#include <chrono>
+#include <mutex>
 
-static int currentPress = NOT_PRESSED; // Default starting key
+
+#define NOTES_PLAYING_OFFSET 20
 static int octaveShift = 0;
-static int currentInstrument = 0; // 0 - Piano, 1 - Harmonica ,2 - Violin
+static int currentInstrument = 1; // 0 - Piano, 1 - Harmonica ,2 - Violin
+static bool playingNote = false;  // To track if the note is already playing
+static int playingNoteValue = 0; //to store the note value that is being played.
+
+std::map<int, std::shared_ptr<Instrument>> instrumentsMap;
+int32_t notesAvg[10];
 
 std::map<int, int> noteMapping = {
-    {'A', 60},  // C
-    {'S', 61},  // C#
-    {'D', 62},  // D
-    {'F', 63},  // D#
-    {'G', 64},  // E
-    {'H', 65},  // F
-    {'J', 66},  // F#
-    {'K', 67},  // G
-    {'L', 68},  // G#
-    {'Z', 69},  // A
-    {'X', 70},  // A#
-    {'C', 71}   // B
+    //lower octave
+    {'C', 48},  // C
+    {'D', 50},  // D
+    {'E', 52},  // E
+    {'G', 55},  // G
+    {'B', 59},  // B
+
+    //Middle octave
+    {'C2', 60},  // C
+    {'D2', 62},  // D
+    {'E2', 64},  // E
+    {'F',  65},  // F
+    {'G2', 67},  // G
+    {'A',  69},  // A
+    {'C3', 72},  // C
+    {'B2', 71},  // B
+
+    //Upper octave
+    {'E3', 76},  // E
+    {'D3', 74},  // D
+    {'G3', 79},  // G
+    {'F2', 77},  // F
+    {'C4', 84},  // C
+    {'A2', 81},  // A
 };
 
-std::map <int, std::shared_ptr<Instrument>> instrumentsMap;
+std::mutex hermonicaMsgMutex; // Mutex for hermonicaMsg
 
 int main() {
-    
-    Piano piano;
-    Harmonica harmonica;
+    Logger log("Musa_log.txt");
+    SeHarmonicaMsg hermonicaMsg;
 
     instrumentsMap[0] = std::make_shared<Piano>();
     instrumentsMap[1] = std::make_shared<Harmonica>();
     instrumentsMap[2] = std::make_shared<Violin>();
-    
-    int note = NOT_PRESSED;  // Track the current note being played
-    bool heldKey = false; // Track if a key is held
 
-    // Create the keyboard listener object
-    KeyboardListener listenerTask;
+    HANDLE hSerial = openSerialPort("COM4");
 
-    // Start the listener thread
-    std::thread listThread(&KeyboardListener::StartListening, &listenerTask, std::ref(currentPress),
-                                                 std::ref(octaveShift), std::ref(currentInstrument));
-
-    // Main loop: Play notes based on the currentPress value
-    while (currentPress != ESCAPE_PRESSED) {
-        if (currentPress != NOT_PRESSED) 
-        { // If a key is pressed
-            if(noteMapping.find(currentPress) != noteMapping.end())
-            {   
-                int newNote = noteMapping[currentPress] + octaveShift;
-                if (!heldKey || note != newNote) {
-                    // If no key was previously held or the current key is different from the previous one
-                    note = newNote;  // Store the pressed key
-                    instrumentsMap[currentInstrument]->PlayNote(note, 100);  // Play the new note
-                    heldKey = true;  // Indicate that a key is being held
-                    std::cout << "Playing note: " << note << std::endl;
-                }
-            }
-        }
-        else if (heldKey ) {
-            // If no key is pressed but one was held previously
-            instrumentsMap[currentInstrument]->StopAllNotes();  // Stop the note when the key is released
-            heldKey = false;  // Reset hold state
-            std::cout << "Note stopped." << std::endl;
-        }
-
-        // Small delay to avoid high CPU usage in the loop
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    if (hSerial == INVALID_HANDLE_VALUE) {
+        std::cerr << "Failed to open COM port" << std::endl;
+        return -1;
     }
 
-    // Wait for the listener thread to finish
-    listThread.join();
+    callibration(notesAvg, hermonicaMsg, hSerial);
+
+    // Start a thread to read data from the serial port
+    std::thread serialReadThread(readSerialPort, hSerial, std::ref(hermonicaMsg), false);
+    std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
+    while (true) {
+        int hole1Value;
+        {
+            std::lock_guard<std::mutex> lock(hermonicaMsgMutex);
+            hole1Value = hermonicaMsg.hole1;
+        }
+        
+        // Check if value is high
+        if (!playingNote && hole1Value >= notesAvg[0] + NOTES_PLAYING_OFFSET) {
+            std::cout << "hole 1 value high: " << hole1Value << std::endl;
+            std::cout << "note avg: " << notesAvg[0] << std::endl;
+            instrumentsMap[currentInstrument]->PlayNote(noteMapping['C2'], 0, 100);
+            playingNote = true;
+            playingNoteValue = noteMapping['C2'];
+        }
+        // Check if value is low
+        else if (!playingNote && hole1Value <= notesAvg[0] - NOTES_PLAYING_OFFSET) {
+            std::cout << "hole 1 value low: " << hole1Value << std::endl;
+            std::cout << "note avg: " << notesAvg[0] << std::endl;
+            instrumentsMap[currentInstrument]->PlayNote(noteMapping['D2'], 0, 100);
+            playingNote = true;
+            playingNoteValue = noteMapping['D2'];
+        }
+        // Check if value is within average range
+        else if (hole1Value >= notesAvg[0] - NOTES_PLAYING_OFFSET && hole1Value <= notesAvg[0] + NOTES_PLAYING_OFFSET) {
+            // Smooth the average using a moving average approach
+            notesAvg[0] = 0.1 * hole1Value + (1 - 0.1) * notesAvg[0];;
+
+            if (playingNote) {
+                instrumentsMap[currentInstrument]->Stop(playingNoteValue, 0); // Only stop the playing note.
+                playingNote = false;
+                playingNoteValue = 0;
+            }
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(10)); // Small delay
+    }
+
+    // Close the serial port when done
+    CloseHandle(hSerial);
 
     std::cout << "Program exited." << std::endl;
     return 0;
 }
+

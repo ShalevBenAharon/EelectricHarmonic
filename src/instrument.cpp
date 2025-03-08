@@ -9,15 +9,15 @@ Instrument::~Instrument(){
     delete_fluid_settings(settings);
 };
 
-void Instrument::PlayNote(int index,int velocity) {
+void Instrument::PlayNote(int index,int chanelIndex ,int velocity) {
     //std::cout << "Playing note..." << std::endl;
-    fluid_synth_noteon(synth, 0, index, velocity);  // Channel 0, note 60 (C4), velocity 100
+    fluid_synth_noteon(synth, chanelIndex, index, velocity);  // Channel 0, note 60 (C4), velocity 100
     
 }
 
-void Instrument::Stop(int index) {
+void Instrument::Stop(int index,int chanelIndex) {
   //std::cout << "stop played." << std::endl;
-  fluid_synth_noteoff(synth, 0, index);  // Stop the note
+  fluid_synth_noteoff(synth, chanelIndex, index);  // Stop the note
 }
 
 void Instrument::StopAllNotes() {
