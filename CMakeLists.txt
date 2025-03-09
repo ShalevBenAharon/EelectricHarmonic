@@ -1,3 +1,15 @@
+# From the root of your project
+#mkdir build
+
+
+# Configure with CMake for x64 architecture
+#cmake .. -G "Visual Studio 16 2019" -A x64
+
+# Build the project in Release mode (for x64)
+#cmake --build . --config Release
+#cmake --build . --config Debug
+
+
 cmake_minimum_required(VERSION 3.10)
 
 # Project Name
@@ -27,7 +39,7 @@ add_executable(Electric_Harmonica ${SOURCES} ${HEADERS})
 
 # Link FluidSynth library (ensure you have the MSVC-compatible FluidSynth version)
 # Update the path here to point to the MSVC version of FluidSynth
-target_link_libraries(Electric_Harmonica "C:/Users/shale/Desktop/EHarmonica/lib/libfluidsynth.dll.a")
+target_link_libraries(Electric_Harmonica "${CMAKE_SOURCE_DIR}/lib/libfluidsynth.dll.a")
 
 # Link necessary Windows libraries (kernel32 and for Winsock and serial)
 target_link_libraries(Electric_Harmonica kernel32)
