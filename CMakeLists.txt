@@ -1,6 +1,6 @@
 # From the root of your project
 #mkdir build
-
+#cd build
 
 # Configure with CMake for x64 architecture
 #cmake .. -G "Visual Studio 16 2019" -A x64

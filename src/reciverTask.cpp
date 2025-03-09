@@ -7,13 +7,6 @@
 #include <chrono>
 #include <atomic>
 
-std::atomic<bool> timeFlag(false);  // Atomic flag to be set after 1 minute
-
-void setTimeFlagAfterDelay(int minutes) {
-    std::this_thread::sleep_for(std::chrono::minutes(minutes));  // Wait for the specified time (1 minute)
-    timeFlag = true;  // Set the flag after the delay
-    std::cout << "Flag set after " << minutes << " minute(s)" << std::endl;
-}
 void parseStrintoMSge(std::string str, SeHarmonicaMsg &msg)
 {
 
@@ -94,9 +87,9 @@ HANDLE openSerialPort(const char* portName) {
     // Set timeouts for the serial port
     COMMTIMEOUTS timeouts = { 0 };
     
-    timeouts.ReadIntervalTimeout = MAXDWORD;   // Reduced from 50 to 10 ms
-    timeouts.ReadTotalTimeoutConstant = 0;  // Reduced from 50 to 10 ms
-    timeouts.ReadTotalTimeoutMultiplier = 0; // Reduced from 10 to 1 ms
+    timeouts.ReadIntervalTimeout = MAXDWORD; 
+    timeouts.ReadTotalTimeoutConstant = 0;  
+    timeouts.ReadTotalTimeoutMultiplier = 0; 
 
     timeouts.WriteTotalTimeoutConstant   = 50;   // Constant timeout for writing
     timeouts.WriteTotalTimeoutMultiplier = 10;   // Multiplier for the total write timeout (per byte)
@@ -135,11 +128,6 @@ void readSerialPort(HANDLE hSerial, SeHarmonicaMsg& hermonicaMsg,bool isInCalibr
                    clbCount++;
                 }
                 
-                // std::cout << counter << std::endl;
-                // if(timeFlag)
-                // {
-                //     isRunning = false;
-                // }
             }
         } else {
             std::cerr << "Error reading from COM port" << std::endl;
@@ -147,8 +135,7 @@ void readSerialPort(HANDLE hSerial, SeHarmonicaMsg& hermonicaMsg,bool isInCalibr
         }
         Sleep(10);  // Add a short delay to prevent CPU overuse
     }
-    // std::cout <<"after a min : " << counter << std::endl;
-    // timerThread.join();
+
 }
 
 void callibration(int32_t *notesAvg,SeHarmonicaMsg& hermonicaMsg ,HANDLE hSerial ){
